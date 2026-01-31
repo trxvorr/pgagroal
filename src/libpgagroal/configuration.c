@@ -95,7 +95,7 @@ static bool is_empty_string(char* s);
 static bool is_same_server(struct server* s1, struct server* s2);
 static bool is_same_tls(struct server* s1, struct server* s2);
 static bool is_valid_config_key(const char* config_key, struct config_key_info* key_info);
-
+static void reset_server_failures(void);
 static bool key_in_section(char* wanted, char* section, char* key, bool global, bool* unknown);
 static bool is_comment_line(char* line);
 static bool section_line(char* line, char* section);
@@ -142,6 +142,8 @@ pgagroal_init_configuration(void* shm)
    for (int i = 0; i < NUMBER_OF_SERVERS; i++)
    {
       atomic_init(&config->servers[i].state, SERVER_NOTINIT);
+      atomic_init(&config->servers[i].health_state, SERVER_HEALTH_UP);
+      config->servers[i].failures = 0;
    }
 
    config->failover = false;
@@ -158,6 +160,11 @@ pgagroal_init_configuration(void* shm)
    config->validation = VALIDATION_OFF;
    config->background_interval = PGAGROAL_TIME_SEC(DEFAULT_BACKGROUND_INTERVAL);
    config->max_retries = 5;
+   config->health_check = false;
+   config->health_check_period = PGAGROAL_TIME_SEC(DEFAULT_HEALTH_CHECK_PERIOD);
+   config->health_check_timeout = PGAGROAL_TIME_SEC(DEFAULT_HEALTH_CHECK_TIMEOUT);
+   snprintf(config->health_check_user, MAX_USERNAME_LENGTH, "postgres");
+   config->health_check_pid = 0;
    config->common.authentication_timeout = PGAGROAL_TIME_SEC(DEFAULT_AUTHENTICATION_TIMEOUT);
    config->disconnect_client = 0;
    config->disconnect_client_force = false;
@@ -513,6 +520,24 @@ pgagroal_validate_configuration(void* shm, bool has_unix_socket, bool has_main_s
    {
       pgagroal_log_warn("pgagroal: max_connections (%d) is greater than allowed (%d)", config->max_connections, MAX_NUMBER_OF_CONNECTIONS);
       config->max_connections = MAX_NUMBER_OF_CONNECTIONS;
+   }
+
+   if (config->health_check && config->health_check_period.s < HEALTH_CHECK_MIN_INTERVAL)
+   {
+      pgagroal_log_warn("pgagroal: health_check_period is invalid (< %d), disabling health check", HEALTH_CHECK_MIN_INTERVAL);
+      config->health_check = false;
+   }
+
+   if (config->health_check && config->health_check_timeout.s < HEALTH_CHECK_MIN_INTERVAL)
+   {
+      pgagroal_log_warn("pgagroal: health_check_timeout is invalid (< %d), disabling health check", HEALTH_CHECK_MIN_INTERVAL);
+      config->health_check = false;
+   }
+
+   if (config->health_check && strlen(config->health_check_user) == 0)
+   {
+      pgagroal_log_warn("pgagroal: health_check_user is empty, disabling health check");
+      config->health_check = false;
    }
 
    if (config->number_of_frontend_users > 0 && config->allow_unknown_users)
@@ -3491,6 +3516,29 @@ transfer_configuration(struct main_configuration* config, struct main_configurat
    config->common.authentication_timeout = reload->common.authentication_timeout;
    config->disconnect_client = reload->disconnect_client;
    config->disconnect_client_force = reload->disconnect_client_force;
+
+   if (restart_bool("health_check", config->health_check, reload->health_check))
+   {
+      reset_server_failures();
+      changed = true;
+   }
+   if (config->health_check_period.s != reload->health_check_period.s)
+   {
+      reset_server_failures();
+      changed = true;
+   }
+   config->health_check_period = reload->health_check_period;
+   if (config->health_check_timeout.s != reload->health_check_timeout.s)
+   {
+      reset_server_failures();
+      changed = true;
+   }
+   config->health_check_timeout = reload->health_check_timeout;
+   if (restart_string("health_check_user", config->health_check_user, reload->health_check_user, true))
+   {
+      reset_server_failures();
+      changed = true;
+   }
    /* pidfile */
    if (restart_string("pidfile", config->pidfile, reload->pidfile, true))
    {
@@ -5542,6 +5590,37 @@ pgagroal_apply_main_configuration(struct main_configuration* config,
          unknown = true;
       }
    }
+   else if (key_in_section("health_check", section, key, true, &unknown))
+   {
+      if (as_bool(value, &config->health_check))
+      {
+         unknown = true;
+      }
+   }
+   else if (key_in_section("health_check_period", section, key, true, &unknown))
+   {
+      if (as_seconds(value, &config->health_check_period, PGAGROAL_TIME_SEC(DEFAULT_HEALTH_CHECK_PERIOD)))
+      {
+         unknown = true;
+      }
+   }
+   else if (key_in_section("health_check_timeout", section, key, true, &unknown))
+   {
+      if (as_seconds(value, &config->health_check_timeout, PGAGROAL_TIME_SEC(DEFAULT_HEALTH_CHECK_TIMEOUT)))
+      {
+         unknown = true;
+      }
+   }
+   else if (key_in_section("health_check_user", section, key, true, &unknown))
+   {
+      max = strlen(value);
+      if (max > MAX_USERNAME_LENGTH - 1)
+      {
+         max = MAX_USERNAME_LENGTH - 1;
+      }
+      memset(config->health_check_user, 0, MAX_USERNAME_LENGTH);
+      memcpy(config->health_check_user, value, max);
+   }
    else if (key_in_section("authentication_timeout", section, key, true, &unknown))
    {
       if (as_seconds(value, &config->common.authentication_timeout, PGAGROAL_TIME_SEC(DEFAULT_AUTHENTICATION_TIMEOUT)))
@@ -6872,4 +6951,14 @@ pgagroal_is_binary_file(const char* path)
 
 error:
    return true;
+}
+static void
+reset_server_failures(void)
+{
+   struct main_configuration* config = (struct main_configuration*)shmem;
+
+   for (int i = 0; i < config->number_of_servers; i++)
+   {
+      config->servers[i].failures = 0;
+   }
 }
