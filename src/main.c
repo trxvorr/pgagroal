@@ -2675,87 +2675,112 @@ reload_configuration(void)
 {
    bool restart = false;
    char pgsql[MISC_LENGTH];
+   char old_host[MISC_LENGTH];
+   int old_port;
+   int old_metrics;
+   int old_management;
    struct main_configuration* config;
 
    config = (struct main_configuration*)shmem;
 
-   shutdown_io();
-   shutdown_uds();
-   shutdown_metrics();
-   shutdown_management();
+   /* Save old values before reload */
+   memset(&old_host, 0, sizeof(old_host));
+   memcpy(&old_host, config->common.host, sizeof(old_host));
+   old_port = config->common.port;
+   old_metrics = config->common.metrics;
+   old_management = config->management;
 
    pgagroal_reload_configuration(&restart);
 
-   memset(&pgsql, 0, sizeof(pgsql));
-   snprintf(&pgsql[0], sizeof(pgsql), ".s.PGSQL.%d", config->common.port);
-
-   if (pgagroal_bind_unix_socket(config->unix_socket_dir, &pgsql[0], &unix_pgsql_socket))
+   /* Only rebind main listening sockets if host or port changed */
+   if (strcmp(old_host, config->common.host) || old_port != config->common.port)
    {
-      pgagroal_log_fatal("pgagroal: Could not bind to %s/%s", config->unix_socket_dir, &pgsql[0]);
-      goto error;
+      shutdown_io();
+      shutdown_uds();
+
+      memset(&pgsql, 0, sizeof(pgsql));
+      snprintf(&pgsql[0], sizeof(pgsql), ".s.PGSQL.%d", config->common.port);
+
+      if (pgagroal_bind_unix_socket(config->unix_socket_dir, &pgsql[0], &unix_pgsql_socket))
+      {
+         pgagroal_log_fatal("pgagroal: Could not bind to %s/%s", config->unix_socket_dir, &pgsql[0]);
+         goto error;
+      }
+
+      free(main_fds);
+      main_fds = NULL;
+      main_fds_length = 0;
+
+      if (pgagroal_bind(config->common.host, config->common.port, &main_fds, &main_fds_length, config->nodelay, config->backlog))
+      {
+         pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->common.port);
+         goto error;
+      }
+
+      if (main_fds_length > MAX_FDS)
+      {
+         pgagroal_log_fatal("pgagroal: Too many descriptors %d", main_fds_length);
+         goto error;
+      }
+
+      start_io();
+      start_uds();
    }
 
-   free(main_fds);
-   main_fds = NULL;
-   main_fds_length = 0;
-
-   if (pgagroal_bind(config->common.host, config->common.port, &main_fds, &main_fds_length, config->nodelay, config->backlog))
+   /* Only rebind metrics if metrics port changed */
+   if (old_metrics != config->common.metrics)
    {
-      pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->common.port);
-      goto error;
-   }
+      shutdown_metrics();
 
-   if (main_fds_length > MAX_FDS)
-   {
-      pgagroal_log_fatal("pgagroal: Too many descriptors %d", main_fds_length);
-      goto error;
-   }
-
-   start_io();
-   start_uds();
-
-   if (config->common.metrics > 0)
-   {
       free(metrics_fds);
       metrics_fds = NULL;
       metrics_fds_length = 0;
 
-      /* Bind metrics socket */
-      if (pgagroal_bind(config->common.host, config->common.metrics, &metrics_fds, &metrics_fds_length, config->nodelay, config->backlog))
+      if (config->common.metrics > 0)
       {
-         pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->common.metrics);
-         goto error;
-      }
+         /* Bind metrics socket */
+         if (pgagroal_bind(config->common.host, config->common.metrics, &metrics_fds, &metrics_fds_length, config->nodelay, config->backlog))
+         {
+            pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->common.metrics);
+            goto error;
+         }
 
-      if (metrics_fds_length > MAX_FDS)
-      {
-         pgagroal_log_fatal("pgagroal: Too many descriptors %d", metrics_fds_length);
-         goto error;
-      }
+         if (metrics_fds_length > MAX_FDS)
+         {
+            pgagroal_log_fatal("pgagroal: Too many descriptors %d", metrics_fds_length);
+            goto error;
+         }
 
-      start_metrics();
+         start_metrics();
+      }
    }
 
-   if (config->management > 0)
+   /* Only rebind management if management port changed */
+   if (old_management != config->management)
    {
+      shutdown_management();
+
       free(management_fds);
       management_fds = NULL;
       management_fds_length = 0;
 
-      /* Bind management socket */
-      if (pgagroal_bind(config->common.host, config->management, &management_fds, &management_fds_length, config->nodelay, config->backlog))
+      if (config->management > 0)
       {
-         pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->management);
-         goto error;
-      }
+         /* Bind management socket */
+         if (pgagroal_bind(config->common.host, config->management, &management_fds, &management_fds_length, config->nodelay, config->backlog))
+         {
+            pgagroal_log_fatal("pgagroal: Could not bind to %s:%d", config->common.host, config->management);
+            goto error;
+         }
 
-      if (management_fds_length > MAX_FDS)
-      {
-         pgagroal_log_fatal("pgagroal: Too many descriptors %d", management_fds_length);
-         goto error;
-      }
+         if (management_fds_length > MAX_FDS)
+         {
+            pgagroal_log_fatal("pgagroal: Too many descriptors %d", management_fds_length);
+            goto error;
+         }
 
-      start_management();
+         start_management();
+      }
    }
 
    for (int i = 0; i < main_fds_length; i++)

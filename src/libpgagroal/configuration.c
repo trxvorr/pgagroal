@@ -86,7 +86,6 @@ static void copy_server(struct server* dst, struct server* src);
 static void copy_hba(struct hba* dst, struct hba* src);
 static void copy_user(struct user* dst, struct user* src);
 static int restart_int(char* name, int e, int n);
-static int restart_bool(char* name, bool e, bool n);
 static int restart_string(char* name, char* e, char* n, bool skip_non_existing);
 static int restart_limit(char* name, struct main_configuration* config, struct main_configuration* reload);
 static int restart_server(struct server* src, struct server* dst);
@@ -3746,6 +3745,10 @@ copy_server(struct server* dst, struct server* src)
    memcpy(&dst->name[0], &src->name[0], MISC_LENGTH);
    memcpy(&dst->host[0], &src->host[0], MISC_LENGTH);
    dst->port = src->port;
+   dst->tls = src->tls;
+   memcpy(&dst->tls_cert_file[0], &src->tls_cert_file[0], MAX_PATH);
+   memcpy(&dst->tls_key_file[0], &src->tls_key_file[0], MAX_PATH);
+   memcpy(&dst->tls_ca_file[0], &src->tls_ca_file[0], MAX_PATH);
    atomic_init(&dst->state, state);
 }
 
@@ -3772,22 +3775,6 @@ restart_int(char* name, int e, int n)
    if (e != n)
    {
       pgagroal_log_info("Restart required for %s - Existing %d New %d", name, e, n);
-      return 1;
-   }
-
-   return 0;
-}
-
-/**
- * Utility function prints a line in the log when a restart is required.
- * @return 0 when parameter values are same, 1 when a restart required.
- */
-static int
-restart_bool(char* name, bool e, bool n)
-{
-   if (e != n)
-   {
-      pgagroal_log_info("Restart required for %s - Existing %s New %s", name, e ? "true" : "false", n ? "true" : "false");
       return 1;
    }
 
@@ -3900,14 +3887,7 @@ restart_server(struct server* src, struct server* dst)
    }
    else if (!is_same_tls(src, dst))
    {
-      snprintf(restart_message, sizeof(restart_message), "Server <%s>, parameter <tls>", src->name);
-      restart_bool(restart_message, dst->tls, src->tls);
-      snprintf(restart_message, sizeof(restart_message), "Server <%s>, parameter <tls_cert_file>", src->name);
-      restart_string(restart_message, dst->tls_cert_file, src->tls_cert_file, false);
-      snprintf(restart_message, sizeof(restart_message), "Server <%s>, parameter <tls_key_file>", src->name);
-      restart_string(restart_message, dst->tls_key_file, src->tls_key_file, false);
-      snprintf(restart_message, sizeof(restart_message), "Server <%s>, parameter <tls_ca_file>", src->name);
-      restart_string(restart_message, dst->tls_ca_file, src->tls_ca_file, false);
+      pgagroal_log_info("Restart required for Server <%s>: TLS configuration changed", src->name);
       return 1;
    }
 
