@@ -272,7 +272,7 @@ pgagroal_read_configuration(void* shm, char* filename, bool emit_warnings)
 
             idx_sections++;
 
-            if (strcmp(section, PGAGROAL_MAIN_INI_SECTION))
+            if (strcmp(section, PGAGROAL_MAIN_INI_SECTION) && strcmp(section, "prometheus"))
             {
                if (idx_server > 0 && idx_server <= NUMBER_OF_SERVERS)
                {
@@ -4097,7 +4097,7 @@ key_in_section(char* wanted, char* section, char* key, bool global, bool* unknow
 
    // if here there is a match on the key, ensure the section is
    // appropriate
-   if (global && (!strncmp(section, PGAGROAL_MAIN_INI_SECTION, MISC_LENGTH) || !strncmp(section, PGAGROAL_VAULT_INI_SECTION, MISC_LENGTH)))
+   if (global && (!strncmp(section, PGAGROAL_MAIN_INI_SECTION, MISC_LENGTH) || !strncmp(section, PGAGROAL_VAULT_INI_SECTION, MISC_LENGTH) || !strncmp(section, "prometheus", MISC_LENGTH)))
    {
       return true;
    }
