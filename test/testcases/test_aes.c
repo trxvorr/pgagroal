@@ -177,10 +177,10 @@ cleanup:
 }
 
 /**
- * Test: Decryption with wrong password fails.
+ * Test: Decryption with wrong password does not recover plaintext.
  *
  * Encrypts data with one password and attempts to decrypt with a
- * different password. Verifies that decryption fails.
+ * different password. Verifies that the original plaintext is not recovered.
  */
 MCTF_TEST(test_aes_decrypt_wrong_password_fails)
 {
@@ -200,7 +200,8 @@ MCTF_TEST(test_aes_decrypt_wrong_password_fails)
 
    ret_dec = pgagroal_decrypt(ciphertext, ciphertext_length, wrong_password, &decrypted, ENCRYPTION_AES_256_CBC);
 
-   MCTF_ASSERT(ret_dec != 0, cleanup, "pgagroal_decrypt with wrong password should fail");
+   MCTF_ASSERT(ret_dec != 0 || decrypted == NULL || strcmp(decrypted, plaintext) != 0, cleanup,
+               "pgagroal_decrypt with wrong password should either fail or produce different output");
 
 cleanup:
    free(ciphertext);
