@@ -448,6 +448,9 @@ server_probe(int server_idx, bool* up, int* auth_type)
    pgagroal_disconnect(fd);
 
    *up = query_success;
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
+   free(password);
+   password = NULL;
    return 0;
 
 error:
@@ -459,5 +462,8 @@ error:
    {
       pgagroal_disconnect(fd);
    }
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
+   free(password);
+   password = NULL;
    return 1;
 }

@@ -853,6 +853,7 @@ done:
    pgagroal_stop_logging();
    pgagroal_destroy_shared_memory(shmem, size);
 
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
 
    if (verbose)

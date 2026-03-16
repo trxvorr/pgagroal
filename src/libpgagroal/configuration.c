@@ -1689,6 +1689,7 @@ pgagroal_read_users_configuration(void* shm, char* filename)
          {
             printf("pgagroal: Invalid USER entry: invalid UTF-8 password for user '%s'\n", username);
             printf("%s\n", line);
+            pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
             free(password);
             free(decoded);
             password = NULL;
@@ -1715,6 +1716,7 @@ pgagroal_read_users_configuration(void* shm, char* filename)
             printf("%s\n", line);
          }
 
+         pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
          free(password);
          free(decoded);
          password = NULL;
@@ -1731,6 +1733,7 @@ pgagroal_read_users_configuration(void* shm, char* filename)
       goto error;
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
 
    fclose(file);
@@ -1739,7 +1742,9 @@ pgagroal_read_users_configuration(void* shm, char* filename)
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
    free(decoded);
 
@@ -1828,6 +1833,7 @@ pgagroal_read_frontend_users_configuration(void* shm, char* filename)
          {
             printf("pgagroal: Invalid FRONTEND USER entry: invalid UTF-8 password for user '%s'\n", username);
             printf("%s\n", line);
+            pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
             free(password);
             free(decoded);
             password = NULL;
@@ -1854,6 +1860,7 @@ pgagroal_read_frontend_users_configuration(void* shm, char* filename)
             printf("%s\n", line);
          }
 
+         pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
          free(password);
          free(decoded);
          password = NULL;
@@ -1870,6 +1877,7 @@ pgagroal_read_frontend_users_configuration(void* shm, char* filename)
       goto error;
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
 
    fclose(file);
@@ -1878,7 +1886,9 @@ pgagroal_read_frontend_users_configuration(void* shm, char* filename)
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
    free(decoded);
 
@@ -1992,6 +2002,7 @@ pgagroal_read_admins_configuration(void* shm, char* filename)
          {
             printf("pgagroal: Invalid ADMIN entry: invalid UTF-8 password for user '%s'\n", username);
             printf("%s\n", line);
+            pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
             free(password);
             free(decoded);
             password = NULL;
@@ -2020,6 +2031,7 @@ pgagroal_read_admins_configuration(void* shm, char* filename)
             printf("%s\n", line);
          }
 
+         pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
          free(password);
          free(decoded);
 
@@ -2038,6 +2050,7 @@ pgagroal_read_admins_configuration(void* shm, char* filename)
       goto error;
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
 
    fclose(file);
@@ -2046,7 +2059,9 @@ pgagroal_read_admins_configuration(void* shm, char* filename)
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
    free(decoded);
 
@@ -2126,6 +2141,7 @@ pgagroal_vault_read_users_configuration(void* shm, char* filename)
          {
             printf("pgagroal: Invalid VAULT USER entry: invalid UTF-8 password for user '%s'\n", username);
             printf("%s\n", line);
+            pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
             free(password);
             free(decoded);
             password = NULL;
@@ -2154,6 +2170,7 @@ pgagroal_vault_read_users_configuration(void* shm, char* filename)
             printf("%s\n", line);
          }
 
+         pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
          free(password);
          free(decoded);
 
@@ -2172,6 +2189,7 @@ pgagroal_vault_read_users_configuration(void* shm, char* filename)
       goto error;
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
 
    fclose(file);
@@ -2180,7 +2198,9 @@ pgagroal_vault_read_users_configuration(void* shm, char* filename)
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
    free(decoded);
 
@@ -2281,6 +2301,7 @@ pgagroal_read_superuser_configuration(void* shm, char* filename)
          {
             printf("pgagroal: Invalid SUPERUSER entry: invalid UTF-8 password for user '%s'\n", username);
             printf("%s\n", line);
+            pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
             free(password);
             free(decoded);
             password = NULL;
@@ -2307,6 +2328,7 @@ pgagroal_read_superuser_configuration(void* shm, char* filename)
             printf("%s\n", line);
          }
 
+         pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
          free(password);
          free(decoded);
 
@@ -2317,6 +2339,7 @@ pgagroal_read_superuser_configuration(void* shm, char* filename)
       }
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
 
    fclose(file);
@@ -2325,7 +2348,9 @@ pgagroal_read_superuser_configuration(void* shm, char* filename)
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
+   pgagroal_cleanse(password, password != NULL ? strlen(password) : 0);
    free(password);
    free(decoded);
 

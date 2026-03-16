@@ -433,6 +433,7 @@ master_key(char* password, bool generate_pwd, int pwd_length, int32_t output_for
                   if (!pgagroal_utf8_valid((const unsigned char*)password, strlen(password)))
                   {
                      printf("Invalid UTF-8 sequence in master key.\n");
+                     pgagroal_cleanse(password, strlen(password));
                      free(password);
                      password = NULL;
                      continue;
@@ -442,6 +443,7 @@ master_key(char* password, bool generate_pwd, int pwd_length, int32_t output_for
                   if (char_count == (size_t)-1)
                   {
                      printf("Error counting UTF-8 characters in master key.\n");
+                     pgagroal_cleanse(password, strlen(password));
                      free(password);
                      password = NULL;
                      continue;
@@ -449,6 +451,7 @@ master_key(char* password, bool generate_pwd, int pwd_length, int32_t output_for
                   if (char_count < MIN_PASSWORD_LENGTH)
                   {
                      printf("Invalid key length, must be at least %d characters.\n", MIN_PASSWORD_LENGTH);
+                     pgagroal_cleanse(password, strlen(password));
                      free(password);
                      password = NULL;
                      continue;
@@ -456,6 +459,7 @@ master_key(char* password, bool generate_pwd, int pwd_length, int32_t output_for
                   if (char_count > MAX_PASSWORD_CHARS)
                   {
                      printf("Master key too long (%zu characters). Maximum allowed: %d characters.\n", char_count, MAX_PASSWORD_CHARS);
+                     pgagroal_cleanse(password, strlen(password));
                      free(password);
                      password = NULL;
                      continue;
@@ -498,6 +502,7 @@ master_key(char* password, bool generate_pwd, int pwd_length, int32_t output_for
 
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
 
@@ -514,6 +519,7 @@ error:
 
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
 
@@ -672,6 +678,7 @@ password:
       warnx("Invalid UTF-8 sequence in password");
       if (do_free)
       {
+         pgagroal_cleanse(password, strlen(password));
          free(password);
       }
       password = NULL;
@@ -684,6 +691,7 @@ password:
       warnx("Error counting UTF-8 characters in password");
       if (do_free)
       {
+         pgagroal_cleanse(password, strlen(password));
          free(password);
       }
       password = NULL;
@@ -694,6 +702,7 @@ password:
       warnx("Password too long (%zu characters). Maximum allowed: %d characters.", char_count, MAX_PASSWORD_CHARS);
       if (do_free)
       {
+         pgagroal_cleanse(password, strlen(password));
          free(password);
       }
       password = NULL;
@@ -706,6 +715,7 @@ password:
 
       if (verify != NULL)
       {
+         pgagroal_cleanse(verify, strlen(verify));
          free(verify);
          verify = NULL;
       }
@@ -717,10 +727,12 @@ password:
       if (!pgagroal_utf8_valid((const unsigned char*)verify, strlen(verify)))
       {
          warnx("Invalid UTF-8 sequence in verification password. Please use valid UTF-8 encoding.");
+         pgagroal_cleanse(verify, strlen(verify));
          free(verify);
          verify = NULL;
          if (do_free)
          {
+            pgagroal_cleanse(password, strlen(password));
             free(password);
          }
          password = NULL;
@@ -731,10 +743,12 @@ password:
       if (verify_char_count == (size_t)-1)
       {
          warnx("Error counting UTF-8 characters in verification password");
+         pgagroal_cleanse(verify, strlen(verify));
          free(verify);
          verify = NULL;
          if (do_free)
          {
+            pgagroal_cleanse(password, strlen(password));
             free(password);
          }
          password = NULL;
@@ -743,10 +757,12 @@ password:
       if (verify_char_count > MAX_PASSWORD_CHARS)
       {
          warnx("Verification password too long (%zu characters). Maximum allowed: %d characters.", verify_char_count, MAX_PASSWORD_CHARS);
+         pgagroal_cleanse(verify, strlen(verify));
          free(verify);
          verify = NULL;
          if (do_free)
          {
+            pgagroal_cleanse(password, strlen(password));
             free(password);
          }
          password = NULL;
@@ -757,9 +773,11 @@ password:
          warnx("Passwords do not match");
          if (do_free)
          {
+            pgagroal_cleanse(password, strlen(password));
             free(password);
          }
          password = NULL;
+         pgagroal_cleanse(verify, strlen(verify));
          free(verify);
          verify = NULL;
          goto password;
@@ -777,13 +795,16 @@ password:
    fputs(entry, users_file);
 
    free(entry);
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
    free(encrypted);
    free(encoded);
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
+   pgagroal_cleanse(verify, strlen(verify));
    free(verify);
 
    fclose(users_file);
@@ -817,13 +838,16 @@ password:
 error:
 
    free(entry);
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
    free(encrypted);
    free(encoded);
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
+   pgagroal_cleanse(verify, strlen(verify));
    free(verify);
 
    if (users_file)
@@ -981,6 +1005,7 @@ password:
             warnx("Invalid UTF-8 sequence in password");
             if (do_free)
             {
+               pgagroal_cleanse(password, strlen(password));
                free(password);
             }
             password = NULL;
@@ -993,6 +1018,7 @@ password:
             warnx("Error counting UTF-8 characters in password");
             if (do_free)
             {
+               pgagroal_cleanse(password, strlen(password));
                free(password);
             }
             password = NULL;
@@ -1003,6 +1029,7 @@ password:
             warnx("Password too long (%zu characters). Maximum allowed: %d characters.", char_count, MAX_PASSWORD_CHARS);
             if (do_free)
             {
+               pgagroal_cleanse(password, strlen(password));
                free(password);
             }
             password = NULL;
@@ -1014,6 +1041,7 @@ password:
             printf("Verify   : ");
             if (verify != NULL)
             {
+               pgagroal_cleanse(verify, strlen(verify));
                free(verify);
                verify = NULL;
             }
@@ -1023,10 +1051,12 @@ password:
             if (!pgagroal_utf8_valid((const unsigned char*)verify, strlen(verify)))
             {
                warnx("Invalid UTF-8 sequence in verification password. Please use valid UTF-8 encoding.");
+               pgagroal_cleanse(verify, strlen(verify));
                free(verify);
                verify = NULL;
                if (do_free)
                {
+                  pgagroal_cleanse(password, strlen(password));
                   free(password);
                }
                password = NULL;
@@ -1037,10 +1067,12 @@ password:
             if (verify_char_count == (size_t)-1)
             {
                warnx("Error counting UTF-8 characters in verification password");
+               pgagroal_cleanse(verify, strlen(verify));
                free(verify);
                verify = NULL;
                if (do_free)
                {
+                  pgagroal_cleanse(password, strlen(password));
                   free(password);
                }
                password = NULL;
@@ -1049,10 +1081,12 @@ password:
             if (verify_char_count > MAX_PASSWORD_CHARS)
             {
                warnx("Verification password too long (%zu characters). Maximum allowed: %d characters.", verify_char_count, MAX_PASSWORD_CHARS);
+               pgagroal_cleanse(verify, strlen(verify));
                free(verify);
                verify = NULL;
                if (do_free)
                {
+                  pgagroal_cleanse(password, strlen(password));
                   free(password);
                }
                password = NULL;
@@ -1063,9 +1097,11 @@ password:
                warnx("Passwords do not match");
                if (do_free)
                {
+                  pgagroal_cleanse(password, strlen(password));
                   free(password);
                }
                password = NULL;
+               pgagroal_cleanse(verify, strlen(verify));
                free(verify);
                verify = NULL;
                goto password;
@@ -1098,13 +1134,16 @@ password:
       goto error;
    }
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
    free(encrypted);
    free(encoded);
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
+   pgagroal_cleanse(verify, strlen(verify));
    free(verify);
 
    fclose(users_file);
@@ -1141,13 +1180,16 @@ password:
 
 error:
 
+   pgagroal_cleanse(master_key, master_key != NULL ? strlen(master_key) : 0);
    free(master_key);
    free(encrypted);
    free(encoded);
    if (do_free)
    {
+      pgagroal_cleanse(password, strlen(password));
       free(password);
    }
+   pgagroal_cleanse(verify, strlen(verify));
    free(verify);
 
    if (users_file)

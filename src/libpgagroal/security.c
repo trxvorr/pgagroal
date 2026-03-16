@@ -1139,6 +1139,7 @@ pgagroal_remote_management_scram_sha256(char* username, char* password, int serv
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -1165,6 +1166,7 @@ bad_password:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -1203,6 +1205,7 @@ error:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -2136,6 +2139,7 @@ retry:
 
    pgagroal_log_debug("client_scram256 done");
 
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_first_message_bare);
    free(server_first_message);
@@ -2156,6 +2160,7 @@ retry:
    return AUTH_SUCCESS;
 
 bad_password:
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_first_message_bare);
    free(server_first_message);
@@ -2176,6 +2181,7 @@ bad_password:
    return AUTH_BAD_PASSWORD;
 
 error:
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_first_message_bare);
    free(server_first_message);
@@ -2984,6 +2990,7 @@ server_scram256(char* username, char* password, int slot, SSL* server_ssl)
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -3007,6 +3014,7 @@ bad_password:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -3028,6 +3036,7 @@ error:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -5320,6 +5329,7 @@ pgagroal_scram_client_auth(char* username, char* password, int socket, SSL* serv
    free(error);
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -5352,6 +5362,7 @@ bad_password:
    free(error);
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -5374,6 +5385,7 @@ error:
    free(error);
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -6574,6 +6586,7 @@ pgagroal_scram_client_authenticate(char* username, char* password, int server_fd
    /* Cleanup */
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -6602,6 +6615,7 @@ bad_password:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
@@ -6629,6 +6643,7 @@ error:
 
    free(salt);
    free(err);
+   pgagroal_cleanse(password_prep, password_prep != NULL ? strlen(password_prep) : 0);
    free(password_prep);
    free(client_nounce);
    free(combined_nounce);
